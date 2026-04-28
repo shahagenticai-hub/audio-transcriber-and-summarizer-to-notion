@@ -1,0 +1,157 @@
+{
+  "name": "Audio Transcriber and Summarizer to Notion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "audio-upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "0302c223-cf71-4313-8929-1705328a6624",
+      "name": "Webhook",
+      "webhookId": "8d11c8bc-afe2-4cc2-ae55-9265a0594d3f"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_NOTION_DATABASE_ID",
+          "cachedResultUrl": "YOUR_NOTION_DATABASE_URL"
+        },
+        "title": "Audio Transcript",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Transcript|rich_text",
+              "textContent": "={{ $('Transcribe Audio (Groq)').item.json.text }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "textContent": "={{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        -16
+      ],
+      "id": "6d474eb6-5075-4ab3-8fe3-897b4958f973",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENROUTER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openrouter/free\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Summarize this transcript clearly and concisely:\\n\\n{{ $json.text }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        -16
+      ],
+      "id": "dcb3644a-6ea9-4f3f-a883-9e8571be1542",
+      "name": "Summarize Transcript (AI)"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/transcribe",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -128,
+        -16
+      ],
+      "id": "383417f2-2070-4ed1-8b13-33731de9b1f1",
+      "name": "Transcribe Audio (Groq)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio (Groq)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Transcript (AI)": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio (Groq)": {
+      "main": [
+        [
+          {
+            "node": "Summarize Transcript (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "899db965-29ef-432c-8894-9cbf7cb5deb1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  },
+  "id": "sq4hXfGnHLLwCeKY",
+  "tags": []
+}
